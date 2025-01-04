@@ -1,10 +1,12 @@
 import sys
+from datetime import datetime
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QLabel, QTextEdit, QPushButton, QVBoxLayout, QWidget, QMessageBox,
-    QListWidget, QHBoxLayout, QMenuBar, QMenu, QAction
+    QListWidget, QHBoxLayout, QAction, QTreeWidget, QTreeWidgetItem
 )
-from PyQt5.QtCore import Qt
-from datetime import datetime
+
 
 class DiaryApp(QMainWindow):
     def __init__(self):
@@ -43,9 +45,25 @@ class DiaryApp(QMainWindow):
         display_layout.addWidget(self.list_widget)
         display_layout.addWidget(self.diary_content)
 
+        treeWidget = QTreeWidget(self)
+        treeWidget.setHeaderHidden(True)  # 隐藏表头
+        treeWidget.setAnimated(True)  # 启动动画效果
+        treeWidget.itemClicked.connect(self.onItemClicked)  # 连接槽信号
+
+        # 添加日记项
+        item1 = QTreeWidgetItem(treeWidget, ["2024年12月"])
+        item1.addChild(QTreeWidgetItem(["12月1日"]))
+        item1.addChild(QTreeWidgetItem(["12月2日"]))
+
+        item2 = QTreeWidgetItem(treeWidget, ["2024年11月"])
+        item2.addChild(QTreeWidgetItem(["11月1日"]))
+        item2.child(0).setData(0, Qt.UserRole, "path/to/2024-11-02.txt");
+        item2.addChild(QTreeWidgetItem(["11月2日"]))
+
         main_layout = QHBoxLayout()
         main_layout.addLayout(input_layout)
         main_layout.addLayout(display_layout)
+        main_layout.addWidget(treeWidget)
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -107,6 +125,9 @@ class DiaryApp(QMainWindow):
         helpMenu.addAction(aboutAct)
 
     def save_entry(self):
+        """
+        保存按钮，代码逻辑
+        """
         entry = self.text_area.toPlainText().strip()
         if entry:
             date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -144,6 +165,16 @@ class DiaryApp(QMainWindow):
                         break
         except FileNotFoundError:
             self.diary_content.clear()
+
+    def onItemClicked(self, item, column):
+        """
+        槽信号，
+        """
+        # 获取关联的文件路径
+        filePath = item.data(column, Qt.UserRole)
+        if filePath:
+            self.displayFileContent(filePath)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
